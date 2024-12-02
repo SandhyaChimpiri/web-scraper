@@ -4,6 +4,7 @@ const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const { clear } = require("console");
 
 puppeteer.use(StealthPlugin());
 
@@ -18,7 +19,6 @@ const CORS_ORIGIN=process.env.CORS_ORIGIN || "https://web-scraper-cyan-xi.vercel
 // }));
 
 app.use(cors({ origin: "*" }));
-
 
 //  screenshots directory
 const screenshotsDir = path.join(__dirname, "screenshots");
