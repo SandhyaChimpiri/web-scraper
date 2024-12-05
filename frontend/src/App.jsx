@@ -15,23 +15,17 @@ function App() {
     setLoading(true);
     setError(null);
     setScreenshot(null);
-
-    const isValidUrl = /^(https?|chrome):\/\/[^\s$.?#].[^\s]*$/.test(url);
-    if (!isValidUrl) {
+  
+    if (!url.trim() || !/^(https?|chrome):\/\/[^\s$.?#].[^\s]*$/.test(url)) {
       setError("Please enter a valid URL.");
       setLoading(false);
       return;
     }
-
-    if (!url.trim()) {
-      setError("Please enter a valid URL.");
-      setLoading(false);
-      return;
-    }
-
+  
     try {
       const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
       const response = await axios.post(`${apiUrl}/scrape`, { url });
+  
       if (response.data && response.data.data) {
         const { links, contents, images } = response.data.data;
         setResult({
@@ -39,52 +33,65 @@ function App() {
           contents: contents || [],
           images: images || [],
         });
+  
         setScreenshot(`${apiUrl}${response.data.screenshot}`);
       } else {
-        setResult({ links: [], contents: [] });
         setError("Invalid response format from the server.");
       }
     } catch (err) {
-      setError("Failed to scrape the page. Ensure the backend is running.");
+      console.error(err);
+      if (err.response) {
+        setError(`Server error: ${err.response.data?.error || err.message}`);
+      } else if (err.request) {
+        setError("Failed to reach the server. Please check your network connection.");
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const toggleSection = (section) => {
-    setActiveSection((prev) => (prev === section ? "" : section)); 
+    setActiveSection((prev) => (prev === section ? "" : section));
   };
 
   return (
     <div className="main-page">
       <div className="main-form">
         <h1>Web Scraper</h1>
-        <br/>
+        <br />
         <form onSubmit={handleScrape} className="form">
-          <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter URL"
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter URL"
           />
-          <button type="submit"> {loading ? "Scraping..." : "Scrape"} </button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Scraping..." : "Scrape"}
+          </button>
         </form>
         {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
       {!loading && result.links.length > 0 && (
-      <div className="sections">
-        <div className="section-header" onClick={() => toggleSection("links")}>
-          <h2>Scraped Links</h2>
-        </div>
-        <div className="section-header" onClick={() => toggleSection("contents")}>
-          <h2>Scraped Content</h2>
-        </div>
-        <div className="section-header" onClick={() => toggleSection("images")}>
-          <h2>Scraped Images</h2>
-        </div>
-        {screenshot && (
-          <div className="section-header" onClick={() => toggleSection("screenshot")} >
-            <h2>Screenshot</h2>
+        <div className="sections">
+          <div className="section-header" onClick={() => toggleSection("links")}>
+            <h2>Scraped Links</h2>
           </div>
-        )}
-      </div>
-)}
+          <div className="section-header" onClick={() => toggleSection("contents")}>
+            <h2>Scraped Content</h2>
+          </div>
+          <div className="section-header" onClick={() => toggleSection("images")}>
+            <h2>Scraped Images</h2>
+          </div>
+          {screenshot && (
+            <div className="section-header" onClick={() => toggleSection("screenshot")}>
+              <h2>Screenshot</h2>
+            </div>
+          )}
+        </div>
+      )}
       {activeSection && (
         <div className="overlay">
           {activeSection === "links" && (
@@ -92,7 +99,9 @@ function App() {
               <ul>
                 {result.links.map((item, index) => (
                   <li key={index}>
-                    <a href={item.href} target="_blank" rel="noopener noreferrer"> {item.text} </a>
+                    <a href={item.href} target="_blank" rel="noopener noreferrer">
+                      {item.text}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -110,20 +119,30 @@ function App() {
           {activeSection === "images" && (
             <div className="center-content">
               <ul className="image-list">
-              {result.images.map((image, index) => (
-                <li>
-                <img key={index} src={image.src} alt={image.alt || "Image"} style={{ width: "200px", marginBottom: "0.5rem" }} />
-                </li>
-              ))}
+                {result.images.map((image, index) => (
+                  <li key={index}>
+                    <img
+                      src={image.src}
+                      alt={image.alt || "Image"}
+                      style={{ width: "200px", height: "150px", marginBottom: "0.5rem" }}
+                    />
+                  </li>
+                ))}
               </ul>
             </div>
           )}
           {activeSection === "screenshot" && (
             <div className="center-content">
-              <img src={screenshot} alt="Screenshot" style={{ width: "300px", border: "1px solid #ccc" }} />
+              <img
+                src={screenshot}
+                alt="Screenshot"
+                style={{ width: "300px", border: "1px solid #ccc" }}
+              />
             </div>
           )}
-          <button onClick={() => setActiveSection("")} className="close-button"> Close </button>
+          <button onClick={() => setActiveSection("")} className="close-button">
+            Close
+          </button>
         </div>
       )}
     </div>
