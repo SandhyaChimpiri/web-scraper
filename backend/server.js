@@ -46,13 +46,16 @@ app.post("/scrape", async (req, res) => {
     return res.status(400).json({ error: "Invalid URL format" });
   }
 
-  let browser;
+     let browser;
   try {
-    browser = await puppeteer.launch({
-      executablePath: "C:/Users/Admin/.cache/puppeteer/chrome/win64-131.0.6778.87/chrome-win64/chrome.exe",
-      headless: true,                                    // If false browser opens
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
-    });
+    const executablePath = puppeteer.executablePath();
+    console.log('Resolved Puppeteer Executable Path:', executablePath);
+  
+      browser = await puppeteer.launch({
+      executablePath,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });                                                    
 
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
